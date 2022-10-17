@@ -16,7 +16,7 @@ COPY *.go ./
 RUN go build -o /docker-gs-ping
 
 ## Deploy
-FROM gcr.io/distroless/base-debian10
+FROM gcr.io/distroless/static-debian11:nonroot
 
 WORKDIR /
 
