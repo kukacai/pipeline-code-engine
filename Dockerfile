@@ -1,29 +1,31 @@
-# syntax=docker/dockerfile:1
+FROM golang:1.19-buster as builder
 
-## Build
-FROM golang:1.16-buster AS build
-
+# Create and change to the app directory.
 WORKDIR /app
 
-COPY go.mod ./
-COPY go.sum ./
-COPY vendor ./vendor
-
+# Retrieve application dependencies.
+# This allows the container build to reuse cached dependencies.
+# Expecting to copy go.mod and if present go.sum.
+COPY go.* ./
 RUN go mod download
 
-COPY *.go ./
+# Copy local code to the container image.
+COPY . ./
 
-RUN go build -o /docker-gs-ping
+# Build the binary.
+RUN go build -v -o server
 
-## Deploy
-FROM gcr.io/distroless/static-debian11:nonroot
+# Use the official Debian slim image for a lean production container.
+# https://hub.docker.com/_/debian
+# https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
+FROM debian:buster-slim
+RUN set -x && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
-WORKDIR /
-
-COPY --from=build /docker-gs-ping /docker-gs-ping
+# Copy the binary to the production image from the builder stage.
+COPY --from=builder /app/server /app/server
 
 EXPOSE 8080
-
-USER nonroot:nonroot
-
-ENTRYPOINT ["/docker-gs-ping"]
+# Run the web service on container startup.
+CMD ["/app/server"]

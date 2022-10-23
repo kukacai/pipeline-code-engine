@@ -4,8 +4,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -16,18 +14,17 @@ func main() {
 		log.Printf("Defaulting to port %s", port)
 	}
 
-	// Starts a new Gin instance with no middle-ware
-	r := gin.New()
-
-	// Define handlers
-	r.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Hello World!")
-	})
-	r.GET("/ping", func(c *gin.Context) {
-		c.String(http.StatusOK, "pong")
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Serving request: %s", r.URL.Path)
+		w.Write([]byte("Hello, World!"))
 	})
 
-	// Listen and serve on defined port
+	http.HandleFunc("/", handler)
+
 	log.Printf("Listening on port %s", port)
-	r.Run(":" + port)
+
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Fatal(err)
+	}
+
 }
