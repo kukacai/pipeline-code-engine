@@ -21,6 +21,11 @@ func main() {
 
 	http.HandleFunc("/", handler)
 
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
 	log.Printf("Listening on port %s", port)
 
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
