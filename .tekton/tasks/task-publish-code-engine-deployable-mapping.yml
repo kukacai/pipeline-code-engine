@@ -30,7 +30,7 @@ spec:
       default: "0"
     - name: task-image
       description: image used to execute this task
-      default: "icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.9"
+      default: "icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.11"
     - name: deployment-type
       description:  Specifies the type of deployment. Valid values are 'application' and 'job'. 
       default: "application"
@@ -73,8 +73,15 @@ spec:
         fi
 
         ibmcloud login -a $(params.ibmcloud-api) -r $IBM_CLOUD_REGION --apikey $IBM_CLOUD_API_KEY
-        ibmcloud target -g $(params.resource-group)
-        echo "y" | ibmcloud plugin install code-engine
+        ibmcloud target -g "$(params.resource-group)"
+
+        # Make sure that the latest version of Code Engine CLI is installed
+        if ! ibmcloud plugin show code-engine >/dev/null 2>&1; then
+            ibmcloud plugin install code-engine
+        else
+            ibmcloud plugin update code-engine --force
+        fi
+
         ibmcloud ce proj select -n $(params.code-engine-project)
 
         DEPLOYABLE_JSON=$(ibmcloud ce app get -n $(params.app-name) -o json)
